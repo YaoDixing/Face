@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:background="#aacc00aa"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <com.ydx.facepp.signature.ui.WritingBoard
+            android:layout_margin="12dp"
+            android:background="#eeeeee"
+            android:id="@+id/write_board"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
+    </LinearLayout>
+
+    <TextView
+        android:padding="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="画笔宽度"/>
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/seekBar" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="一字一截"/>
+    <Switch
+        android:id="@+id/switch_one_word"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/cutCanvas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="保存"/>
+        <Button
+            android:id="@+id/reset"
+            android:layout_toRightOf="@id/cutCanvas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="重置"/>
+        <Button
+            android:id="@+id/compositeWord"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="合成"
+            android:layout_toRightOf="@+id/reset"/>
+    </RelativeLayout>
+    <ScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/console_lay"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
