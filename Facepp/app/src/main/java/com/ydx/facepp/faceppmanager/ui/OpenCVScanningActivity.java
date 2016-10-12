@@ -318,11 +318,7 @@ public class OpenCVScanningActivity extends BaseActivity {
         }
     }
 
-    boolean isChecking;
-    int scanningCount=0;
     private void scanning(final Mat mat){
-        scanningCount++;
-        Log.e("scanningCount",scanningCount+"");
         if(type==ScanningType.trainPerson){
             new Thread( () -> checkFace(mat,train1) ).start();
         }else if(type==ScanningType.validPerson){
@@ -351,10 +347,8 @@ public class OpenCVScanningActivity extends BaseActivity {
     private void clearConsole(){
         similarPersonLay.post( () -> similarPersonLay.removeAllViews());
     }
-    int checkCount=0;
-    private synchronized void checkFace(Mat mat,File file){
-        checkCount++;
-        Log.e("checkCount",checkCount+"");
+
+    private void checkFace(Mat mat,File file){
         Bitmap bitmap = Bitmap.createBitmap(mat.cols(),mat.rows(),Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mat,bitmap);
         ImageUtil.saveBitmapToFile(bitmap,file, Bitmap.CompressFormat.JPEG,60);
@@ -412,7 +406,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     /**
      * add face to person
      */
-    private synchronized void addFaceToPerson(){
+    private void addFaceToPerson(){
         if(!trainFaceIds.isEmpty()){
             JSONObject result= FacePPManager.getInstance().addFaceToPerson(pf.getString(Config.PF_KEY_PERSON_NAME, ""),trainFaceIds);
             try {
@@ -430,7 +424,7 @@ public class OpenCVScanningActivity extends BaseActivity {
         }
     }
 
-    private synchronized void addFaceToFaceSet(String faceSetName){
+    private void addFaceToFaceSet(String faceSetName){
         if(!trainFaceIds.isEmpty()){
             JSONObject result=  FacePPManager.getInstance().addFaceToFaceSet(faceSetName,trainFaceIds);
             try {
@@ -449,7 +443,7 @@ public class OpenCVScanningActivity extends BaseActivity {
 
     }
 
-    private synchronized void trainPerson(){
+    private void trainPerson(){
         String sessionId= FacePPManager.getInstance().trainVerify(pf.getString(Config.PF_KEY_PERSON_NAME,""));
         JSONObject result=FacePPManager.getInstance().getResultBySessionId(sessionId);
         try {
@@ -459,7 +453,7 @@ public class OpenCVScanningActivity extends BaseActivity {
         }
     }
 
-    private synchronized void trainFaceSet(){
+    private void trainFaceSet(){
         String sessionId= FacePPManager.getInstance().trainSearch(faceSetName);
         JSONObject result=FacePPManager.getInstance().getResultBySessionId(sessionId);
         try {
@@ -470,7 +464,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
 
-    private synchronized void validPerson(){
+    private void validPerson(){
         if(trainFaceIds.size()>0){
             JSONObject result= FacePPManager.getInstance().checIsSamePerson(trainFaceIds.get(0),pf.getString(Config.PF_KEY_PERSON_NAME, ""));
             try {
@@ -488,7 +482,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
     int searchSetCount=0;
-    private synchronized void searchInFaceSet(){
+    private void searchInFaceSet(){
         searchSetCount++;
         if(!trainFaceIds.isEmpty()){
             addSetSimlaryMsg("正在识别第"+searchSetCount+"张脸:");
@@ -543,7 +537,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
     int findPersonCount=0;
-    private synchronized void findPerson(){
+    private void findPerson(){
         findPersonCount++;
         addSetSimlaryMsg("正在识别第"+findPersonCount+"张脸");
         JSONObject result= FacePPManager.getInstance().checIsSamePerson(trainFaceIds.get(findPersonCount-1),pf.getString(Config.PF_KEY_PERSON_NAME,""));
@@ -566,7 +560,7 @@ public class OpenCVScanningActivity extends BaseActivity {
         }
     }
 
-    private synchronized void searchInGroup(){
+    private void searchInGroup(){
 
     }
 
