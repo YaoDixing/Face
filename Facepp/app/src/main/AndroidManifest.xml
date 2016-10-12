@@ -25,9 +25,7 @@
         <activity
             android:name=".faceppmanager.ui.PersonalFaceManageActivity"
             android:screenOrientation="portrait"/>
-        <activity
-            android:screenOrientation="portrait"
-            android:name=".faceppmanager.ui.FaceScanningActivity"/>
+
         <activity
             android:name=".faceppmanager.ui.OpenCVScanningActivity"
             android:screenOrientation="portrait"/>

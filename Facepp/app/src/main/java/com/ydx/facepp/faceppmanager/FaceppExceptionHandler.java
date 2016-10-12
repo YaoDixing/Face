@@ -17,7 +17,7 @@ public class FaceppExceptionHandler implements IFaceppCallBack{
     public FaceppExceptionHandler(AppCompatActivity activity){
         this.activity=activity;
         dialog=new FaceppDialog(activity);
-       facePPManager= FacePPManager.getInstance();
+        facePPManager= FacePPManager.getInstance();
         facePPManager.initIFaceppCallBack(this);
     }
 

@@ -146,38 +146,29 @@ public class OpenCVScanningActivity extends BaseActivity {
     private Button reSetBtn;
     private Button clearConsole;
     private ScrollView scroll;
-    private void findView(){
+    private void findView() {
         initCamera();
-        reSetBtn= ((Button) findViewById(R.id.reSet));
-        reSetBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                reSet();
-            }
-        });
-        clearConsole= ((Button) findViewById(R.id.clearConsole));
-        clearConsole.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clearConsole();
-            }
-        });
-        scroll= ((ScrollView) findViewById(R.id.scroll));
-        similarPersonLay= ((LinearLayout) findViewById(R.id.similar_person_lay));
-        tv=(TextView) findViewById(R.id.title);
-        switchCamera= ((Switch) findViewById(R.id.switch1));
-        if(cameraIsFront){
+        reSetBtn = ((Button) findViewById(R.id.reSet));
+        reSetBtn.setOnClickListener((view) -> reSet());
+        clearConsole = ((Button) findViewById(R.id.clearConsole));
+        clearConsole.setOnClickListener((view) -> clearConsole());
+        scroll = ((ScrollView) findViewById(R.id.scroll));
+        similarPersonLay = ((LinearLayout) findViewById(R.id.similar_person_lay));
+        tv = (TextView) findViewById(R.id.title);
+        switchCamera = ((Switch) findViewById(R.id.switch1));
+        if (cameraIsFront) {
             switchCamera.setChecked(true);
-        }else {
+        } else {
             switchCamera.setChecked(false);
         }
-        switchCamera.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                cameraIsFront=isChecked;
-                cameraSwitch(isChecked);
-            }
-        });
+        switchCamera.setOnCheckedChangeListener(
+                (CompoundButton buttonView, boolean isChecked) ->
+                {
+                    cameraIsFront = isChecked;
+                    cameraSwitch(isChecked);
+                }
+
+        );
     }
 
 
@@ -221,9 +212,9 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
     private Mat transposeMat(Mat mat){
-        Mat mat1=new Mat();
-        Mat dst=new Mat();
-        Mat dst1=new Mat();
+        Mat mat1 = new Mat();
+        Mat dst  = new Mat();
+        Mat dst1 = new Mat();
         //转置
         Core.transpose(mat,mat1);
         if(cameraIsFront) {
@@ -263,7 +254,7 @@ public class OpenCVScanningActivity extends BaseActivity {
                 detectionStateEnum=DetectionStateEnum.detecting;
                 scanning(dst);
             }
-            return dst;
+            return dst ;
         }
     };
 
@@ -326,56 +317,24 @@ public class OpenCVScanningActivity extends BaseActivity {
             finish();
         }
     }
+
+    boolean isChecking;
+    int scanningCount=0;
     private void scanning(final Mat mat){
-
+        scanningCount++;
+        Log.e("scanningCount",scanningCount+"");
         if(type==ScanningType.trainPerson){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat,train1);
-                }
-            }).start();
+            new Thread( () -> checkFace(mat,train1) ).start();
         }else if(type==ScanningType.validPerson){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat, check);
-
-                }
-
-            }).start();
+            new Thread( () ->  checkFace(mat,check) ).start();
         }else if(type==ScanningType.addFaceToFaceSet){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat,train1);
-
-                }
-            }).start();
+            new Thread( () -> checkFace(mat,train1) ).start();
         }else if(type==ScanningType.recognitionInSet){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat, check);
-
-                }
-
-            }).start();
+            new Thread( () ->  checkFace(mat,check) ).start();
         }else if(type==ScanningType.recognitionInGroup){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat, check);
-                }
-
-            }).start();
+            new Thread( () ->  checkFace(mat,check) ).start();
         }else if(type==ScanningType.findPerson){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    checkFace(mat, check);
-                }
-            }).start();
+            new Thread( () ->  checkFace(mat,check) ).start();
         }
 
 
@@ -390,15 +349,12 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
     private void clearConsole(){
-        similarPersonLay.post(new Runnable() {
-            @Override
-            public void run() {
-                similarPersonLay.removeAllViews();
-            }
-        });
-
+        similarPersonLay.post( () -> similarPersonLay.removeAllViews());
     }
-    private void checkFace(Mat mat,File file){
+    int checkCount=0;
+    private synchronized void checkFace(Mat mat,File file){
+        checkCount++;
+        Log.e("checkCount",checkCount+"");
         Bitmap bitmap = Bitmap.createBitmap(mat.cols(),mat.rows(),Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mat,bitmap);
         ImageUtil.saveBitmapToFile(bitmap,file, Bitmap.CompressFormat.JPEG,60);
@@ -442,16 +398,13 @@ public class OpenCVScanningActivity extends BaseActivity {
         }
     }
     private void addSetSimlaryMsg(final String msg){
-        getHandler().post(new Runnable() {
-            @Override
-            public void run() {
-                TextView textView = new TextView(OpenCVScanningActivity.this);
-                textView.setText(msg);
-                similarPersonLay.addView(textView);
-                int off = similarPersonLay.getMeasuredHeight() - scroll.getHeight();
-                if (off > 0) {
-                    scroll.scrollTo(0, off);
-                }
+        getHandler().post( () -> {
+            TextView textView = new TextView(OpenCVScanningActivity.this);
+            textView.setText(msg);
+            similarPersonLay.addView(textView);
+            int off = similarPersonLay.getMeasuredHeight() - scroll.getHeight();
+            if (off > 0) {
+                scroll.scrollTo(0, off);
             }
         });
     }
@@ -460,8 +413,7 @@ public class OpenCVScanningActivity extends BaseActivity {
      * add face to person
      */
     private synchronized void addFaceToPerson(){
-        int size=trainFaceIds.size();
-        if(size>0){
+        if(!trainFaceIds.isEmpty()){
             JSONObject result= FacePPManager.getInstance().addFaceToPerson(pf.getString(Config.PF_KEY_PERSON_NAME, ""),trainFaceIds);
             try {
                 if(result.getBoolean("success")){
@@ -479,7 +431,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     }
 
     private synchronized void addFaceToFaceSet(String faceSetName){
-        if(trainFaceIds.size()>0){
+        if(!trainFaceIds.isEmpty()){
             JSONObject result=  FacePPManager.getInstance().addFaceToFaceSet(faceSetName,trainFaceIds);
             try {
                 if(result.getBoolean("success")){
@@ -538,7 +490,7 @@ public class OpenCVScanningActivity extends BaseActivity {
     int searchSetCount=0;
     private synchronized void searchInFaceSet(){
         searchSetCount++;
-        if(trainFaceIds.size()>0){
+        if(!trainFaceIds.isEmpty()){
             addSetSimlaryMsg("正在识别第"+searchSetCount+"张脸:");
             JSONObject result= FacePPManager.getInstance().recognitionFromFaceSet(trainFaceIds.get(searchSetCount-1),faceSetName,1);
             try {
