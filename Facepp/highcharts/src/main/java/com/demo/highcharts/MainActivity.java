@@ -1,28 +1,21 @@
 package com.demo.highcharts;
 
-import android.content.Context;
-import android.content.res.AssetManager;
-import android.net.Uri;
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.webkit.URLUtil;
 import android.webkit.WebView;
 
+import com.demo.highcharts.base.BaseHtml;
+import com.demo.highcharts.charts.BaseAreaChartJS;
+import com.demo.highcharts.model.BaseSeries;
 import com.demo.highcharts.util.Utils;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 private WebView webView;
@@ -33,9 +26,19 @@ private WebView webView;
         findView();
         initWebViewSettings();
         String htmlFilePath=initHtmlFile();
-        String jsFilePath=initJsFile();
-        String js=readJsToString(jsFilePath);
-        addJsToHtml(htmlFilePath,js);
+        List<BaseSeries> baseSeries=new ArrayList<>();
+        BaseSeries baseSeries1=new BaseSeries();
+        baseSeries1.setName("girl");
+        baseSeries1.setData(new Object[]{"222","333","111","254"});
+        BaseSeries baseSeries2=new BaseSeries();
+        baseSeries2.setName("boy");
+        baseSeries2.setData(new Object[]{"463","212","154","111"});
+        baseSeries.add(baseSeries1);
+        baseSeries.add(baseSeries2);
+        BaseAreaChartJS baseAreaChartJS=new BaseAreaChartJS("HAHHAHA","CNMLGB",baseSeries);
+        String js= baseAreaChartJS.getJs();
+        String html= BaseHtml.getHtml(js);
+        webView.loadData(html,"text/html","utf-8");
     }
 
     private void findView(){
@@ -56,15 +59,14 @@ private WebView webView;
         return Utils.copyAssetsFile(this,"highcharts.html");
     }
 
-    private String initJsFile(){
-        return Utils.copyAssetsFile(this,"3d_pie.js");
+    private String initJsFile(String jsName){
+        return Utils.copyAssetsFile(this,jsName);
     }
 
 
     private void addJsToHtml(String htmlPath,String js){
         String html=readHtmlToString(htmlPath);
         Document document=Jsoup.parse(html);
-
         Element element=document.getElementById("show");
         element.append(js);
         Log.i("document",document.toString());

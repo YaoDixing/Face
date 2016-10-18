@@ -1,15 +1,18 @@
 package com.ydx.facepp.home.ui;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Process;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.fingerprints.service.FingerprintManager;
 import com.ydx.facepp.BaseActivity;
 import com.ydx.facepp.Config;
 import com.ydx.facepp.R;
@@ -21,8 +24,11 @@ import com.ydx.facepp.faceppmanager.ui.PersonalFaceManageActivity;
 import com.ydx.facepp.faceset.FaceSetManagerActivity;
 import com.ydx.facepp.fingerprinter.FingerManager;
 import com.ydx.facepp.fingerprinter.FingerPrinterDialog;
+import com.ydx.facepp.fingerprinter.FingerPrinterTypeEnum;
 import com.ydx.facepp.fingerprinter.FingerStatusEnum;
+import com.ydx.facepp.fingerprinter.MeizuFingerPrinter;
 import com.ydx.facepp.permission.DangerousPermissionEnum;
+import com.ydx.facepp.phone_status.PhoneStatusManager;
 import com.ydx.facepp.signature.ui.SignatureActivity;
 import com.ydx.facepp.ui.BaseDialog;
 import com.ydx.facepp.ui.WaitProcessDialgo;
@@ -33,6 +39,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends BaseActivity implements View.OnClickListener{
     private FaceppExceptionHandler exceptionHandler;
@@ -79,21 +87,15 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
 
         }
         if(permissionManager.isOverAndroidM()){
-            permissionManager.checkPermission(DangerousPermissionEnum.WRITE_EXTERNAL_STORAGE,0x233);
+            List<DangerousPermissionEnum> list=new ArrayList<>();
+            list.add(DangerousPermissionEnum.WRITE_EXTERNAL_STORAGE);
+            list.add(DangerousPermissionEnum.READ_PHONE_STATE);
+            permissionManager.checkPermission(list,0x233);
         }else {
-//            waitProcessDialgo=new WaitProcessDialgo(this);
-//            waitProcessDialgo.setdDialog("提示");
-//            waitProcessDialgo.showDialog();
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-//                    initDetectorXMLFile();
-                }
-            }).start();
-
+            initFinger();
         }
 
-        initFinger();
+
     }
 
     @Override
@@ -215,10 +217,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
     @Override
     public void onGranted(int requestCode) {
         if(requestCode==0x233){
-//            waitProcessDialgo=new WaitProcessDialgo(this);
-//            waitProcessDialgo.setdDialog("提示");
-//            waitProcessDialgo.showDialog();
-//            initDetectorXMLFile();
+            initFinger();
         }
     }
 
@@ -263,9 +262,31 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
         }).start();
 
     }
+    private FingerPrinterTypeEnum fingerPrinterTypeEnum;
     FingerManager fingerManager;
     private boolean fingerAvailable;
     private void initFinger(){
+        String phoneInfo =  PhoneStatusManager.getInstance().getPhoneInfo(this);
+        Log.i("phoneInfo:",phoneInfo);
+        if(Build.MANUFACTURER.equals("Xiaomi")){
+            showMsg(phoneInfo);
+            fingerPrinterTypeEnum=FingerPrinterTypeEnum.xiaomi;
+        }else if(Build.BRAND.equals("Meizu")&&!fingerManager.isOverAndroidM()){
+            fingerPrinterTypeEnum=FingerPrinterTypeEnum.meizu;
+        }
+        else {
+            fingerPrinterTypeEnum=FingerPrinterTypeEnum.other;
+            initMFingerPrinter();
+        }
+
+
+    }
+
+    private void useMeizuPrinter(){
+        MeizuFingerPrinter.getInstance().startVerify();
+    }
+
+    private void initMFingerPrinter(){
         fingerManager= FingerManager.getInstance();
         if(fingerManager.init(this)){
             if(fingerManager.fingerIsAvailable()){
@@ -280,14 +301,22 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
             fingerPrinterDialog.setPrintState("系统版本或设备不支持指纹功能", FingerStatusEnum.noFinger.value);
             fingerPrinterDialog.showDialog();
         }
-
     }
     private void check(){
+
         if(fingerAvailable){
-            fingerManager.auth(callback);
-            fingerPrinterDialog.setPrintState("请触摸指纹传感器",FingerStatusEnum.inRecognition.value);
-            fingerPrinterDialog.showDialog();
-        }else {
+            switch (fingerPrinterTypeEnum){
+                case meizu:
+                    useMeizuPrinter();
+                    break;
+                case xiaomi:
+                    break;
+                case other:
+                    fingerManager.auth(callback);
+                    fingerPrinterDialog.setPrintState("请触摸指纹传感器",FingerStatusEnum.inRecognition.value);
+                    fingerPrinterDialog.showDialog();
+                    break;
+            }
 
         }
 

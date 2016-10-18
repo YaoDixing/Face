@@ -47,8 +47,10 @@ public class Utils {
                 file.mkdirs();
             }
             File jsFile=new File(dataPath+"/"+fileName);
-            if(!jsFile.exists())
-                jsFile.createNewFile();
+            if(jsFile.exists()) {
+                jsFile.delete();
+            }
+            jsFile.createNewFile();
             InputStream is= context.getResources().getAssets().open(fileName);
             if(is==null)
                 return "no asset file";
