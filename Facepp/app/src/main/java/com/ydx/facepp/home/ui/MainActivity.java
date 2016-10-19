@@ -7,12 +7,10 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Process;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.fingerprints.service.FingerprintManager;
 import com.ydx.facepp.BaseActivity;
 import com.ydx.facepp.Config;
 import com.ydx.facepp.R;
@@ -24,9 +22,10 @@ import com.ydx.facepp.faceppmanager.ui.PersonalFaceManageActivity;
 import com.ydx.facepp.faceset.FaceSetManagerActivity;
 import com.ydx.facepp.fingerprinter.FingerManager;
 import com.ydx.facepp.fingerprinter.FingerPrinterDialog;
-import com.ydx.facepp.fingerprinter.FingerPrinterTypeEnum;
+import com.ydx.facepp.fingerprinter.DeviceTypeEnum;
 import com.ydx.facepp.fingerprinter.FingerStatusEnum;
 import com.ydx.facepp.fingerprinter.MeizuFingerPrinter;
+import com.ydx.facepp.fingerprinter.SamsungFingerPrinter;
 import com.ydx.facepp.permission.DangerousPermissionEnum;
 import com.ydx.facepp.phone_status.PhoneStatusManager;
 import com.ydx.facepp.signature.ui.SignatureActivity;
@@ -111,14 +110,14 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
 
         final InputStream in= getResources().openRawResource(R.raw.haarcascade_frontalface_alt2);
 
-                try {
-                    Message message=new Message();
-                    message.arg1=in.available();
-                    message.what=0x111;
-                    progressHandler.sendMessage(message);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        try {
+            Message message=new Message();
+            message.arg1=in.available();
+            message.what=0x111;
+            progressHandler.sendMessage(message);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
         String path=  "/data/data/"+getPackageName()+"/files/DetectorXml";
@@ -236,7 +235,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
                 createFaceSet1();
                 break;
             case R.id.finger:
-               check();
+                identify();
                 break;
             case R.id.signature:
                 goSignature();
@@ -249,7 +248,7 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
         new Thread(new Runnable() {
             @Override
             public void run() {
-              JSONObject result=facePPManager.createFaceSet("faceSet1",null,null);
+                JSONObject result=facePPManager.createFaceSet("faceSet1",null,null);
                 if(result!=null){
                     showMsg("create faceSet success");
                     Intent intent=new Intent();
@@ -262,20 +261,23 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
         }).start();
 
     }
-    private FingerPrinterTypeEnum fingerPrinterTypeEnum;
+    private DeviceTypeEnum deviceTypeEnum;
     FingerManager fingerManager;
     private boolean fingerAvailable;
     private void initFinger(){
         String phoneInfo =  PhoneStatusManager.getInstance().getPhoneInfo(this);
         Log.i("phoneInfo:",phoneInfo);
-        if(Build.MANUFACTURER.equals("Xiaomi")){
+        if(isSamsungDevice()) {
             showMsg(phoneInfo);
-            fingerPrinterTypeEnum=FingerPrinterTypeEnum.xiaomi;
+            deviceTypeEnum= DeviceTypeEnum.samsung;
+        }else if(Build.MANUFACTURER.equals("Xiaomi")){
+            showMsg(phoneInfo);
+            deviceTypeEnum= DeviceTypeEnum.xiaomi;
         }else if(Build.BRAND.equals("Meizu")&&!fingerManager.isOverAndroidM()){
-            fingerPrinterTypeEnum=FingerPrinterTypeEnum.meizu;
+            deviceTypeEnum= DeviceTypeEnum.meizu;
         }
         else {
-            fingerPrinterTypeEnum=FingerPrinterTypeEnum.other;
+            deviceTypeEnum= DeviceTypeEnum.other;
             initMFingerPrinter();
         }
 
@@ -302,24 +304,52 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
             fingerPrinterDialog.showDialog();
         }
     }
-    private void check(){
+    private void identify(){
 
-        if(fingerAvailable){
-            switch (fingerPrinterTypeEnum){
-                case meizu:
-                    useMeizuPrinter();
-                    break;
-                case xiaomi:
-                    break;
-                case other:
-                    fingerManager.auth(callback);
-                    fingerPrinterDialog.setPrintState("请触摸指纹传感器",FingerStatusEnum.inRecognition.value);
-                    fingerPrinterDialog.showDialog();
-                    break;
+            if(fingerAvailable){
+                switch (deviceTypeEnum){
+                    case samsung:
+                        if(SAMSUNG_STATE.equals("")) {
+                            SamsungFingerPrinter.getInstance().startIdentification();
+                        }else {
+                            fingerPrinterDialog.setPrintState(SAMSUNG_STATE, FingerStatusEnum.noFinger.value);
+                            fingerPrinterDialog.showDialog();
+                        }
+                        break;
+                    case meizu:
+                        useMeizuPrinter();
+                        break;
+                    case xiaomi:
+                        break;
+                    case other:
+                        fingerManager.auth(callback);
+                        fingerPrinterDialog.setPrintState("请触摸指纹传感器",FingerStatusEnum.inRecognition.value);
+                        fingerPrinterDialog.showDialog();
+                        break;
+                }
+
             }
 
-        }
 
+
+    }
+    private String SAMSUNG_STATE;
+    private boolean isSamsungDevice(){
+        SAMSUNG_STATE= SamsungFingerPrinter.getInstance().init(this);
+        if(SAMSUNG_STATE.equals("This is not Samsung device"))
+            return false;
+        SamsungFingerPrinter.getInstance().setOnIdentifyResult(new SamsungFingerPrinter.OnIdentifyResult() {
+            @Override
+            public void onSuccess() {
+                showMsg("认证成功");
+            }
+
+            @Override
+            public void onFailed(String msg) {
+                showMsg(msg);
+            }
+        });
+        return true;
     }
 
 
@@ -359,17 +389,17 @@ public class MainActivity extends BaseActivity implements View.OnClickListener{
 
         @Override
         public void onOK(int state) {
-           if(state==FingerStatusEnum.inRecognition.value){
-               fingerPrinterDialog.hideDialog();
-           }else if(state==FingerStatusEnum.success.value){
-               fingerPrinterDialog.hideDialog();
-           }else if(state==FingerStatusEnum.fail.value){
-               fingerPrinterDialog.hideDialog();
-           }else if(state==FingerStatusEnum.noSupport.value){
-               fingerPrinterDialog.hideDialog();
-           }else if(state==FingerStatusEnum.noFinger.value){
-               fingerPrinterDialog.hideDialog();
-           }
+            if(state==FingerStatusEnum.inRecognition.value){
+                fingerPrinterDialog.hideDialog();
+            }else if(state==FingerStatusEnum.success.value){
+                fingerPrinterDialog.hideDialog();
+            }else if(state==FingerStatusEnum.fail.value){
+                fingerPrinterDialog.hideDialog();
+            }else if(state==FingerStatusEnum.noSupport.value){
+                fingerPrinterDialog.hideDialog();
+            }else if(state==FingerStatusEnum.noFinger.value){
+                fingerPrinterDialog.hideDialog();
+            }
         }
     };
 

@@ -22,10 +22,8 @@ public class PhoneStatusManager {
         StringBuilder sb=new StringBuilder();
         sb.append("型号:");
         sb.append(Build.MODEL+",");
-        sb.append("DEVICE:");
-        sb.append(Build.DEVICE+",");
-        sb.append("PRODUCT:");
-        sb.append(Build.PRODUCT+";\n");
+        sb.append("厂商:");
+        sb.append(Build.MANUFACTURER+",");
         return sb.toString();
     }
 }
