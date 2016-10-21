@@ -1,14 +1,12 @@
 package com.demo.highcharts;
 
-import android.support.v7.app.AppCompatActivity;
+import android.os.Process;
 import android.os.Bundle;
 import android.util.Log;
 import android.webkit.WebView;
 
-import com.demo.highcharts.base.BaseHtml;
-import com.demo.highcharts.charts.BaseAreaChartJS;
-import com.demo.highcharts.model.BaseSeries;
 import com.demo.highcharts.util.Utils;
+import com.yaodixing.permissionlibrary.permission.DangerousPermissionEnum;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,28 +15,40 @@ import org.jsoup.nodes.Element;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 private WebView webView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if(permissionManager.isOverAndroidM()){
+            List<DangerousPermissionEnum> list = new ArrayList<>();
+            list.add(DangerousPermissionEnum.WRITE_EXTERNAL_STORAGE);
+            permissionManager.checkPermission(list,DangerousPermissionEnum.WRITE_EXTERNAL_STORAGE.getReqCode());
+        }else {
+            init();
+        }
+
+
+    }
+    private void init(){
         findView();
         initWebViewSettings();
+        initJsFile("echarts.common.min.js");
+        initJsFile("jquery-1.8.3.min.js");
         String htmlFilePath=initHtmlFile();
-        List<BaseSeries> baseSeries=new ArrayList<>();
-        BaseSeries baseSeries1=new BaseSeries();
-        baseSeries1.setName("girl");
-        baseSeries1.setData(new Object[]{"222","333","111","254"});
-        BaseSeries baseSeries2=new BaseSeries();
-        baseSeries2.setName("boy");
-        baseSeries2.setData(new Object[]{"463","212","154","111"});
-        baseSeries.add(baseSeries1);
-        baseSeries.add(baseSeries2);
-        BaseAreaChartJS baseAreaChartJS=new BaseAreaChartJS("HAHHAHA","CNMLGB",baseSeries);
-        String js= baseAreaChartJS.getJs();
-        String html= BaseHtml.getHtml(js);
-        webView.loadData(html,"text/html","utf-8");
+        showHtml(htmlFilePath);
+    }
+
+    @Override
+    public void onGranted(int requestCode) {
+        if(requestCode==DangerousPermissionEnum.WRITE_EXTERNAL_STORAGE.getReqCode())
+            init();
+    }
+
+    @Override
+    public void onRefused(int requestCode) {
+        android.os.Process.killProcess(Process.myPid());
     }
 
     private void findView(){
@@ -56,7 +66,7 @@ private WebView webView;
     }
 
     private String initHtmlFile(){
-        return Utils.copyAssetsFile(this,"highcharts.html");
+        return Utils.copyAssetsFile(this,"ShowCharts.html");
     }
 
     private String initJsFile(String jsName){

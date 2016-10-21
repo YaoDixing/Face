@@ -39,8 +39,8 @@ public class Utils {
 
     public static String copyAssetsFile(Context context,String fileName){
         try {
-//            String dataPath= getDir("HighChartDataJs", Context.MODE_PRIVATE).getPath();
-            String dataPath= Environment.getExternalStorageDirectory().getPath()+"/com.demo.highcharts";
+            String dataPath= context.getDir("EChartsData", Context.MODE_PRIVATE).getPath();
+//            String dataPath= Environment.getExternalStorageDirectory().getPath()+"/com.demo.highcharts";
             Log.e("dataPath",dataPath);
             File file=new File(dataPath);
             if(!file.exists()){

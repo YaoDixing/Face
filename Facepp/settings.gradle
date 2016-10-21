@@ -1,2 +1,2 @@
-include ':app', ':highcharts'
+include ':app', ':highcharts', ':permissionlibrary'
 include ':openCVLibrary310'
