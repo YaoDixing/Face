@@ -187,13 +187,13 @@ public class OpenCVScanningActivity extends BaseActivity {
         reSet();
         if(isFront){
             cameraGLSurfaceView.setCameraIndex(CameraIndexEnum.front.value);
-            cameraGLSurfaceView.disableView();
-            cameraGLSurfaceView.enableView();
+
         }else {
             cameraGLSurfaceView.setCameraIndex(CameraIndexEnum.back.value);
-            cameraGLSurfaceView.disableView();
-            cameraGLSurfaceView.enableView();
+
         }
+        cameraGLSurfaceView.disableView();
+        cameraGLSurfaceView.enableView();
     }
     private boolean cameraIsFront;
     private void initCamera(){

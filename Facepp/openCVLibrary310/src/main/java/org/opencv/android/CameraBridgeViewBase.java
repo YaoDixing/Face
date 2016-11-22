@@ -26,7 +26,7 @@ import java.util.List;
  * frame to the screen.
  * The clients shall implement CvCameraViewListener.
  */
-public abstract class CameraBridgeViewBase extends SurfaceView implements SurfaceHolder.Callback {
+public abstract class   CameraBridgeViewBase extends SurfaceView implements SurfaceHolder.Callback {
 
     private static final String TAG = "CameraBridge";
     private static final int MAX_UNSPECIFIED = -1;
