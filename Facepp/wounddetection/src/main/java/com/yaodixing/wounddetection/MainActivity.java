@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -17,6 +18,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -36,7 +38,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         findView();
-        initSourceImg();
+        initSourceImg(R.drawable.wound1);
+
 //        Mat dst = detectOutLineByCanny(R.drawable.pen);
 //        Mat dst = detectOutLineBySobel(R.drawable.pen);
 //        findWoundContour(dst);
@@ -71,15 +74,19 @@ public class MainActivity extends AppCompatActivity {
         paint = new Paint();
         paint.setColor(Color.RED);
         paint.setStrokeWidth(2);
+        paint.setStyle(Paint.Style.STROKE);
         sourceIv.setImageBitmap(srcBitmap);
 
     }
 
-    void initSourceImg(){
+    void initSourceImg(final int rsId){
         sourceIv.post(new Runnable() {
             @Override
             public void run() {
-                initCanvas(R.drawable.pen);
+                initCanvas(rsId);
+//              detectOutLineByCanny(rsId);
+               Mat mat =  detectOutLineBySobel(rsId);
+//                detectHoughCircles(mat);
             }
         });
 
@@ -90,9 +97,9 @@ public class MainActivity extends AppCompatActivity {
      * @param rsId
      */
     Mat detectOutLineByCanny(int rsId){
-            Bitmap bitmap = BitmapFactory.decodeResource(getResources(),rsId);
+//            Bitmap bitmap = BitmapFactory.decodeResource(getResources(),rsId);
             Mat mat = new Mat();
-            Utils.bitmapToMat(bitmap,mat);
+            Utils.bitmapToMat(srcBitmap,mat);
             Mat grayMat = new Mat();
             Mat cannyEdges = new Mat();
             Mat hierarchy = new Mat();
@@ -125,9 +132,9 @@ public class MainActivity extends AppCompatActivity {
      * @return
      */
     Mat detectOutLineBySobel(int rsId){
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),rsId);
+//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),rsId);
         Mat src = new Mat();
-        Utils.bitmapToMat(bitmap,src);
+        Utils.bitmapToMat(srcBitmap,src);
 
         Mat grayMat = new Mat();
         Mat sobel = new Mat();
@@ -148,9 +155,72 @@ public class MainActivity extends AppCompatActivity {
         Core.convertScaleAbs(gradY,absGradY);
         //计算结果梯度
         Core.addWeighted(absGradX,0.5,absGradY,0.5,1,sobel);
-        Utils.matToBitmap(sobel,bitmap);
-        newIv.setImageBitmap(bitmap);
+        Bitmap newBitmap = Bitmap.createBitmap(sobel.width(),sobel.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(sobel,newBitmap);
+        newIv.setImageBitmap(newBitmap);
         return sobel;
+    }
+
+    /**
+     * harris 角点检测
+     */
+    void detectHarrisCorner(){
+        Mat src = new Mat();
+        Utils.bitmapToMat(srcBitmap,src);
+        Mat grayMat = new Mat();
+        Mat corners = new Mat();
+
+        Imgproc.cvtColor(src,grayMat,Imgproc.COLOR_BGR2GRAY);
+
+        Mat tempDst = new Mat();
+        Imgproc.cornerHarris(grayMat,tempDst,2,3,0.04);
+
+        Mat tempDstNorm = new Mat();
+        Core.normalize(tempDst,tempDstNorm,0,255,Core.NORM_MINMAX);
+        Core.convertScaleAbs(tempDstNorm,corners);
+        Random r = new Random();
+        for(int i=0;i<tempDstNorm.cols();i++){
+            for(int j=0;j<tempDstNorm.rows();j++){
+                double [] value = tempDstNorm.get(j,i);
+                if(value[0] >150)
+                    Imgproc.circle(corners,new Point(i,j),5,new Scalar(r.nextInt(255)),2);
+            }
+        }
+        Bitmap bitmap = Bitmap.createBitmap(src.width(),src.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(corners,bitmap);
+        newIv.setImageBitmap(bitmap);
+    }
+
+    /**
+     * 检测霍夫圆
+     */
+    void detectHoughCircles(){
+        Mat src = new Mat();
+        Utils.bitmapToMat(srcBitmap,src);
+        Mat grayMat = new Mat();
+        Mat cannyEdges = new Mat();
+        Mat circles = new Mat();
+
+        Imgproc.cvtColor(src,grayMat,Imgproc.COLOR_BGR2GRAY);
+        Imgproc.Canny(grayMat,cannyEdges,10,100);
+        Imgproc.HoughCircles(cannyEdges,circles,Imgproc.CV_HOUGH_GRADIENT,1,cannyEdges.rows()/15);
+
+        Mat houghCircles = new Mat();
+        houghCircles.create(cannyEdges.rows(),cannyEdges.cols(),CvType.CV_8UC1);
+        for(int i = 0;i<circles.cols();i++){
+            double [] parameters = circles.get(0,i);
+            double x, y;
+            int r;
+            x = parameters[0];
+            y = parameters[1];
+            r = ((int) parameters[2]);
+
+            Point center = new Point(x,y);
+            Imgproc.circle(houghCircles,center,r,new Scalar(255,0,0),1);
+        }
+        Bitmap bitmap = Bitmap.createBitmap(src.width(),src.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(houghCircles,bitmap);
+        newIv.setImageBitmap(bitmap);
     }
 
     void findWoundContour(Mat src){
@@ -173,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private float startX,startY;
-
+    private Rect lastRect;
     View.OnTouchListener onTouchListener =new View.OnTouchListener() {
         @Override
         public boolean onTouch(View view, MotionEvent event) {
@@ -185,13 +255,21 @@ public class MainActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_MOVE:
                     float stopX = event.getX();
                     float stopY = event.getY();
-                    canvas.drawLine(startX,startY,stopX,stopY,paint);
+                    if(lastRect!=null){
+                        paint;
+                    }
+                    Rect rect = new Rect((int)startX,(int)startY,(int)stopX,(int)stopY);
+                    canvas.drawRect(rect,paint);
                     sourceIv.setImageBitmap(srcBitmap);
-                    startX = stopX;
-                    startY = stopY;
+                    lastRect = rect;
+//                    startX = stopX;
+//                    startY = stopY;
                     break;
             }
             return true;
         }
     };
+
+
+
 }
