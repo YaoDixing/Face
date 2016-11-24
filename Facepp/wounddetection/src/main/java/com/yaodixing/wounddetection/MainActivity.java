@@ -1,5 +1,7 @@
 package com.yaodixing.wounddetection;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -8,8 +10,10 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -29,6 +33,7 @@ import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
+    public static final int REQCODE_CROP_WOUND = 0X101;
     ImageView sourceIv;
     ImageView newIv;
     private Canvas canvas;
@@ -46,7 +51,16 @@ public class MainActivity extends AppCompatActivity {
 //        showArea();
     }
 
+    Button btn;
     void findView(){
+        btn = ((Button) findViewById(R.id.btn));
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this,CropActivity.class);
+                startActivityForResult(intent,REQCODE_CROP_WOUND);
+            }
+        });
         sourceIv =  ((ImageView) findViewById(R.id.iv_source));
         newIv = ((ImageView) findViewById(R.id.iv_new));
         sourceIv.setOnTouchListener(onTouchListener);
@@ -54,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     Bitmap srcBitmap;
     int scaleW,scaleH;
     void initCanvas(int rsId){
-        sourceIv.setImageResource(rsId);
+
 //        BitmapFactory.Options options = new BitmapFactory.Options();
 //        options.outWidth = sourceIv.getWidth();
 //        options.outHeight = sourceIv.getHeight();
@@ -80,6 +94,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initSourceImg(final int rsId){
+        sourceIv.setImageResource(rsId);
         sourceIv.post(new Runnable() {
             @Override
             public void run() {
@@ -256,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
                     float stopX = event.getX();
                     float stopY = event.getY();
                     if(lastRect!=null){
-                        paint;
+
                     }
                     Rect rect = new Rect((int)startX,(int)startY,(int)stopX,(int)stopY);
                     canvas.drawRect(rect,paint);
@@ -271,5 +286,27 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
+    void addTransParent(){
 
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if(resultCode!= Activity.RESULT_OK)
+            return;
+        if(requestCode == REQCODE_CROP_WOUND){
+            if(data !=null){
+                Rect rect = data.getParcelableExtra("rect");
+                org.opencv.core.Rect rect1 = new org.opencv.core.Rect(rect.left,rect.top,rect.width(),rect.height());
+                Log.i("rect",rect.toString());
+                Mat src = new Mat();
+                Utils.bitmapToMat(srcBitmap,src);
+                Mat cropedMat = new Mat(src,rect1);
+                Bitmap bitmap = Bitmap.createBitmap(cropedMat.width(),cropedMat.height(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(cropedMat,bitmap);
+                newIv.setImageBitmap(bitmap);
+            }
+        }
+    }
 }
