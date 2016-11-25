@@ -38,12 +38,14 @@ public class MainActivity extends AppCompatActivity {
     ImageView newIv;
     private Canvas canvas;
     Paint paint;
+    int imgRsId ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        imgRsId = R.drawable.wound3;
         findView();
-        initSourceImg(R.drawable.wound1);
+        initSourceImg(imgRsId);
 
 //        Mat dst = detectOutLineByCanny(R.drawable.pen);
 //        Mat dst = detectOutLineBySobel(R.drawable.pen);
@@ -52,18 +54,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     Button btn;
+    ImageView ivCanny;
     void findView(){
         btn = ((Button) findViewById(R.id.btn));
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent intent = new Intent(MainActivity.this,CropActivity.class);
+                intent.putExtra("imgRsId",imgRsId);
                 startActivityForResult(intent,REQCODE_CROP_WOUND);
             }
         });
         sourceIv =  ((ImageView) findViewById(R.id.iv_source));
         newIv = ((ImageView) findViewById(R.id.iv_new));
         sourceIv.setOnTouchListener(onTouchListener);
+
+        ivCanny = ((ImageView) findViewById(R.id.iv_canny));
     }
     Bitmap srcBitmap;
     int scaleW,scaleH;
@@ -79,6 +85,11 @@ public class MainActivity extends AppCompatActivity {
 
         srcBitmap = Bitmap.createBitmap(sourceIv.getWidth(), sourceIv.getHeight(),
                 Bitmap.Config.ARGB_8888);
+        Mat src = new Mat();
+        Utils.bitmapToMat(srcBitmap,src);
+        Log.d("deviceWidth",getWindowManager().getDefaultDisplay().getWidth()+"");
+        Log.d("deviceHeight",getWindowManager().getDefaultDisplay().getHeight()+"");
+        Log.d("srcBitmap pixels",src.rows()*src.cols()+"");
         //利用bitmap生成画布
         canvas = new Canvas(srcBitmap);
 
@@ -87,8 +98,8 @@ public class MainActivity extends AppCompatActivity {
 
         paint = new Paint();
         paint.setColor(Color.RED);
-        paint.setStrokeWidth(2);
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(5);
+        paint.setStyle(Paint.Style.FILL);
         sourceIv.setImageBitmap(srcBitmap);
 
     }
@@ -100,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 initCanvas(rsId);
 //              detectOutLineByCanny(rsId);
-               Mat mat =  detectOutLineBySobel(rsId);
+//               Mat mat =  detectOutLineBySobel(rsId);
 //                detectHoughCircles(mat);
             }
         });
@@ -109,35 +120,34 @@ public class MainActivity extends AppCompatActivity {
     List<MatOfPoint> contourList;
     /**
      * canny检测边缘
-     * @param rsId
      */
-    Mat detectOutLineByCanny(int rsId){
+    Mat detectOutLineByCanny(Bitmap bitmap,ImageView ivCanny){
 //            Bitmap bitmap = BitmapFactory.decodeResource(getResources(),rsId);
-            Mat mat = new Mat();
-            Utils.bitmapToMat(srcBitmap,mat);
-            Mat grayMat = new Mat();
-            Mat cannyEdges = new Mat();
-            Mat hierarchy = new Mat();
+        Mat mat = new Mat();
+        Utils.bitmapToMat(bitmap,mat);
+        Mat grayMat = new Mat();
+        Mat cannyEdges = new Mat();
+        Mat hierarchy = new Mat();
             /* 保存所有轮廓列表 */
-            contourList = new ArrayList<>();
+        contourList = new ArrayList<>();
             /* 将图像转换为灰度 */
-            Imgproc.cvtColor(mat,grayMat,Imgproc.COLOR_BGR2GRAY);
+        Imgproc.cvtColor(mat,grayMat,Imgproc.COLOR_BGR2GRAY);
 
-            Imgproc.Canny(grayMat,cannyEdges,10,100);
+        Imgproc.Canny(grayMat,cannyEdges,10,100);
 
             /* 找出轮廓 */
-            Imgproc.findContours(cannyEdges,contourList,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.findContours(cannyEdges,contourList,hierarchy,Imgproc.RETR_LIST,Imgproc.CHAIN_APPROX_SIMPLE);
 
             /* 在新的图像上绘制 */
-            Mat contours = new Mat();
-            contours.create(cannyEdges.rows(),cannyEdges.cols(), CvType.CV_8UC3);
-            Random random = new Random();
-            for(int i =0;i<contourList.size();i++){
-                Imgproc.drawContours(contours,contourList,i,new Scalar(random.nextInt(255),random.nextInt(255),random.nextInt(255)),-1);
-            }
-            Bitmap newBitmap = Bitmap.createBitmap(contours.width(),contours.height(), Bitmap.Config.ARGB_8888);
-            Utils.matToBitmap(contours,newBitmap);
-            newIv.setImageBitmap(newBitmap);
+        Mat contours = new Mat();
+        contours.create(cannyEdges.rows(),cannyEdges.cols(), CvType.CV_8UC3);
+        Random random = new Random();
+        for(int i =0;i<contourList.size();i++){
+            Imgproc.drawContours(contours,contourList,i,new Scalar(random.nextInt(255),random.nextInt(255),random.nextInt(255)),-1);
+        }
+        Bitmap newBitmap = Bitmap.createBitmap(contours.width(),contours.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(contours,newBitmap);
+        ivCanny.setImageBitmap(newBitmap);
         return contours;
     }
 
@@ -254,7 +264,7 @@ public class MainActivity extends AppCompatActivity {
             area += Imgproc.contourArea(contourList.get(i));
         }
 
-        Toast.makeText(this,area+",aa",Toast.LENGTH_SHORT).show();
+        Toast.makeText(this,area+"",Toast.LENGTH_SHORT).show();
     }
 
     private float startX,startY;
@@ -273,12 +283,10 @@ public class MainActivity extends AppCompatActivity {
                     if(lastRect!=null){
 
                     }
-                    Rect rect = new Rect((int)startX,(int)startY,(int)stopX,(int)stopY);
-                    canvas.drawRect(rect,paint);
+                    canvas.drawLine(startX,startY,stopX,stopY,paint);
                     sourceIv.setImageBitmap(srcBitmap);
-                    lastRect = rect;
-//                    startX = stopX;
-//                    startY = stopY;
+                    startX = stopX;
+                    startY = stopY;
                     break;
             }
             return true;
@@ -303,9 +311,12 @@ public class MainActivity extends AppCompatActivity {
                 Mat src = new Mat();
                 Utils.bitmapToMat(srcBitmap,src);
                 Mat cropedMat = new Mat(src,rect1);
+                Log.d("cropedMat pixels",cropedMat.cols()*cropedMat.rows()+"");
                 Bitmap bitmap = Bitmap.createBitmap(cropedMat.width(),cropedMat.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(cropedMat,bitmap);
                 newIv.setImageBitmap(bitmap);
+                detectOutLineByCanny(bitmap,ivCanny);
+                showArea();
             }
         }
     }

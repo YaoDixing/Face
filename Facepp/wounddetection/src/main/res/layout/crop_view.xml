@@ -7,7 +7,6 @@
         android:id="@+id/iv_src"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/wound1"
         android:layout_gravity="center"/>
     <com.yaodixing.wounddetection.CropView
         android:id="@+id/iv_transparent"

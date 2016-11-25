@@ -14,6 +14,8 @@ public class CropActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop);
         CropViewLay cropViewLay = ((CropViewLay) findViewById(R.id.cropviewlay));
+        int imgRsId = getIntent().getIntExtra("imgRsId",0);
+        cropViewLay.init(imgRsId);
         cropViewLay.setOnCropListener(new CropView.OnCropWound() {
             @Override
             public void onCropWound(Rect rect) {

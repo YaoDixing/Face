@@ -32,16 +32,17 @@ public class CropViewLay extends FrameLayout{
     public CropViewLay(Context context, AttributeSet attrs) {
         super(context, attrs);
         this.context = context;
-        init();
+
     }
 
     public void setOnCropListener(CropView.OnCropWound listener){
         transparentIv.setOnCropWound(listener);
     }
 
-    void init(){
+    public void init(int imgRsId){
         rootView = ((FrameLayout) LayoutInflater.from(context).inflate(R.layout.crop_view, this));
         srcIv = ((ImageView) rootView.findViewById(R.id.iv_src));
+        srcIv.setImageResource(imgRsId);
         transparentIv = ((CropView) rootView.findViewById(R.id.iv_transparent));
         srcIv.post(new Runnable() {
             @Override
