@@ -1,2 +1,2 @@
-include ':app', ':permissionlibrary', ':wounddetection'
+include ':app', ':permissionlibrary', ':wounddetection', ':yaokplayer'
 include ':openCVLibrary310'
