@@ -15,6 +15,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.opencv.android.Utils;
@@ -39,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private Canvas canvas;
     Paint paint;
     int imgRsId ;
+    TextView tvHint;
+    SeekBar seekBar;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,21 +60,51 @@ public class MainActivity extends AppCompatActivity {
     Button btn;
     ImageView ivCanny;
     void findView(){
+        seekBar = ((SeekBar) findViewById(R.id.seek_bar));
+        tvHint = ((TextView) findViewById(R.id.tv_hint));
         btn = ((Button) findViewById(R.id.btn));
-        btn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this,CropActivity.class);
-                intent.putExtra("imgRsId",imgRsId);
-                startActivityForResult(intent,REQCODE_CROP_WOUND);
-            }
-        });
+        btn.setOnClickListener(cropListener);
         sourceIv =  ((ImageView) findViewById(R.id.iv_source));
         newIv = ((ImageView) findViewById(R.id.iv_new));
         sourceIv.setOnTouchListener(onTouchListener);
 
         ivCanny = ((ImageView) findViewById(R.id.iv_canny));
+
+
+        seekBar.setMax(22);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                paint.setStrokeWidth(i+3);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
+    View.OnClickListener  cropListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            sourceIv.setOnTouchListener(null);
+            Intent intent = new Intent(MainActivity.this,CropActivity.class);
+            intent.putExtra("imgRsId",imgRsId);
+            startActivityForResult(intent,REQCODE_CROP_WOUND);
+        }
+    };
+
+    void release(){
+        initSourceImg(imgRsId);
+        seekBar.setProgress(0);
+        sourceIv.setOnTouchListener(onTouchListener);
+    }
+
     Bitmap srcBitmap;
     int scaleW,scaleH;
     void initCanvas(int rsId){

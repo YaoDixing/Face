@@ -30,7 +30,7 @@ public  class PermissionManager {
     private int requestCode;
 
     public boolean isNeedInit(AppCompatActivity activity){
-        if(Build.VERSION.SDK_INT>=23){
+        if(isOverAndroidM()){
             init((activity));
             return true;
         }
